@@ -1,0 +1,27 @@
+name: tech_daily
+description: "英文技术圈资讯 → AI评分 → 每日简报"
+hours: 24
+
+collectors:
+  - type: hackernews
+    limit: 60
+
+  - type: github_trending
+    limit: 30
+    config:
+      since: daily
+
+  - type: rss
+    limit: 40
+    config:
+      feeds:
+        - url: https://feeds.feedburner.com/TechCrunch
+          name: TechCrunch
+        - url: https://www.wired.com/feed/rss
+          name: Wired
+        - url: https://feeds.arstechnica.com/arstechnica/index
+          name: ArsTechnica
+
+filter:
+  threshold: 7.0
+  max_items: 15

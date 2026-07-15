@@ -1,0 +1,18 @@
+name: trending_cn
+description: "中文热榜聚合 → AI评分 → 飞书推送"
+hours: 12
+
+collectors:
+  - type: newsnow
+    limit: 80
+    config:
+      sources:
+        - weibo
+        - zhihu
+        - bilibili
+        - toutiao
+        - baidu
+
+filter:
+  threshold: 6.5
+  max_items: 20
