@@ -106,6 +106,10 @@ def build_html(data: dict, image_cids: dict) -> str:
   <span class="badge wechat-badge">微信公众号</span>
   {img_tag("wechat", "公众号封面")}
   <h1>{wechat.get("title","")}</h1>
+  <div style="margin:8px 0 16px;padding:12px;background:#f6ffed;border-left:3px solid #07c160;
+               font-size:14px;color:#555;line-height:1.7;border-radius:0 6px 6px 0">
+    {wechat.get("intro") or wechat.get("summary","")}
+  </div>
   <div class="source">摘要：{wechat.get("summary","")}</div>
   {text_to_html(wechat.get("content",""))}
   <div style="margin-top:16px;font-size:13px;color:#999">

@@ -61,15 +61,17 @@ def publish_wechat_draft(wechat: dict) -> dict:
         # 公众号内容转 HTML（简单处理换行）
         html_content = _text_to_html(wechat["content"])
 
+        # intro 优先作为摘要（更有吸引力），fallback 到 summary
+        digest = (wechat.get("intro") or wechat.get("summary") or "")[:120]
         draft_id = create_draft(
             token=token,
             cookie_str=cookie_str,
             title=wechat["title"],
             content=html_content,
-            cdn_url="",     # 无封面图时留空
+            cdn_url="",
             fileid="",
             author_name=_ACCOUNT,
-            digest=wechat.get("summary", "")[:120],
+            digest=digest,
         )
 
         return {"ok": True, "draft_id": draft_id, "title": wechat["title"]}

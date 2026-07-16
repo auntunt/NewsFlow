@@ -47,18 +47,35 @@ WECHAT_PROMPT_TEMPLATE = """以下是一条海外 AI 热点：
 
 ---
 
-请基于这条信息，写一篇公众号深度稿，要求：
+请基于这条信息，写一篇公众号深度长文，要求：
 
-【内容框架】
-1. 开头：用一个国内开发者熟悉的具体场景切入（不是从"最近有一项研究"开始），
-   让读者第一句就感觉"这说的就是我的问题"
-2. 核心信息：解释这件事是什么、为什么重要——但要比原文多一层分析
-3. 中国视角：结合国内实际情况分析（比如：API 访问限制怎么解决？
-   国内有没有类似替代方案？实际部署成本如何？哪些坑国内开发者更容易踩？）
-4. 实操建议：给读者 1-3 个可以今天就试的具体行动
-5. 结尾：一个能触发读者转发或收藏的收尾（反问/未解之问/场景回扣）
+【字数要求】
+**必须 1500 字以上**，不足 1500 字视为不合格。宁可多写不要少。
 
-【字数】1000-1500字
+【内容框架（必须覆盖以下五个部分）】
+
+第一部分·事件切入（200字）
+用一个国内开发者熟悉的具体场景开头，不从"最近有一项研究"开始。
+让读者第一句就觉得"这说的就是我的问题"。
+
+第二部分·核心事件（300字）
+详细解释这件事是什么、怎么发生的、涉及哪些关键细节。
+不要只复述标题，要比原文多一层信息。
+
+第三部分·技术深挖（400字）
+从技术角度深入分析：背后的原理是什么？为什么会这样设计或发生？
+有没有类似的历史案例可以对比？技术社区的反应和争议点在哪？
+
+第四部分·中国视角（300字）
+结合国内实际情况深度分析，必须覆盖以下至少两点：
+- 国内开发者/企业面临的具体差异（工具可及性、网络环境、合规要求等）
+- 国内是否有对应的替代方案或类似产品？差距在哪？
+- 这件事对国内 AI 工程师的实际工作有什么影响？
+- 踩过类似坑的国内案例或社区讨论
+
+第五部分·行动建议+结尾（300字）
+给读者 2-4 个今天就能做的具体行动建议（要足够具体，不是泛泛而谈）。
+结尾用一个能触发转发或收藏的收尾句（反问/未解之问/场景回扣）。
 
 【写作铁律】
 {writing_rules}
@@ -67,9 +84,10 @@ WECHAT_PROMPT_TEMPLATE = """以下是一条海外 AI 热点：
 
 输出格式（严格 JSON）：
 {{
-  "title": "公众号标题（15-25字，制造悬念或戳痛点，禁止陈述句）",
-  "content": "正文全文（纯文本，换行用\\n，禁止 markdown 格式）",
-  "summary": "50字以内的摘要（用于消息推送）",
+  "title": "公众号标题（15-25字，制造悬念或戳痛点，禁止陈述句标题）",
+  "content": "正文全文（纯文本，换行用\\n，禁止 markdown 格式，必须 1500 字以上）",
+  "summary": "50字以内的摘要（用于消息推送预览）",
+  "intro": "100字以内的文章简介（显示在公众号文章列表下方，吸引人点进来，口语化，有悬念感，不要剧透结论）",
   "tags": ["标签1", "标签2", "标签3"]
 }}"""
 
@@ -94,24 +112,56 @@ def generate_wechat(topic: dict) -> dict:
                 {"role": "user", "content": prompt},
             ],
             temperature=0.7,
-            max_tokens=3000,
+            max_tokens=6000,
             response_json=True,
         ))
 
-        # 解析 JSON
+        # 解析 JSON（长文容易有特殊字符，多重兜底）
         import json, re
+        data = {}
+        # 1. 直接解析
         try:
             data = json.loads(result)
         except Exception:
+            pass
+
+        # 2. 提取最外层 {}
+        if not data:
             m = re.search(r'\{[\s\S]+\}', result)
-            data = json.loads(m.group(0)) if m else {}
+            if m:
+                try:
+                    data = json.loads(m.group(0))
+                except Exception:
+                    pass
+
+        # 3. 逐字段正则提取（最稳健，专门处理长文 JSON）
+        if not data or not data.get("content"):
+            title_m   = re.search(r'"title"\s*:\s*"((?:[^"\\]|\\.)*)"', result)
+            content_m = re.search(r'"content"\s*:\s*"([\s\S]*?)"\s*,\s*"summary"', result)
+            summary_m = re.search(r'"summary"\s*:\s*"((?:[^"\\]|\\.)*)"', result)
+            intro_m   = re.search(r'"intro"\s*:\s*"((?:[^"\\]|\\.)*)"', result)
+            tags_m    = re.search(r'"tags"\s*:\s*\[([^\]]*)\]', result)
+
+            if title_m or content_m:
+                tags = []
+                if tags_m:
+                    tags = re.findall(r'"([^"]+)"', tags_m.group(1))
+                data = {
+                    "title":   title_m.group(1) if title_m else "",
+                    "content": content_m.group(1).replace("\\n", "\n") if content_m else "",
+                    "summary": summary_m.group(1) if summary_m else "",
+                    "intro":   intro_m.group(1) if intro_m else "",
+                    "tags":    tags,
+                }
 
         return {
-            "ok": True,
-            "title": data.get("title", ""),
-            "content": data.get("content", ""),
-            "summary": data.get("summary", ""),
-            "tags": data.get("tags", []),
+            "ok":           True,
+            "title":        data.get("title", ""),
+            "content":      data.get("content", ""),
+            "summary":      data.get("summary", ""),
+            "intro":        data.get("intro", ""),
+            "tags":         data.get("tags", []),
+            "word_count":   len(data.get("content", "")),
             "source_topic": topic,
         }
 
