@@ -39,7 +39,7 @@ async def _tts_with_timestamps(
     生成音频并返回词级时间戳列表。
     返回: [{"word": "你", "start_ms": 0, "end_ms": 320}, ...]
     """
-    communicate = edge_tts.Communicate(text, voice)
+    communicate = edge_tts.Communicate(text, voice, boundary="WordBoundary")
     words: list[dict] = []
     audio_chunks: list[bytes] = []
 
