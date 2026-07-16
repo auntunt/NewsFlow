@@ -1,20 +1,21 @@
 name: tech_daily
-description: "英文技术圈资讯 → AI评分 → 每日简报"
+description: "英文技术圈资讯（HN + GitHub + RSS精选）→ AI评分 → 每日简报"
 hours: 24
 
 collectors:
   - type: hackernews
-    limit: 60
+    limit: 50
 
   - type: github_trending
-    limit: 30
+    limit: 20
     config:
       since: daily
 
   - type: rss
-    limit: 40
+    limit: 60
     config:
       feeds:
+        # ── 科技媒体 ──────────────────────────────────
         - url: https://feeds.feedburner.com/TechCrunch
           name: TechCrunch
         - url: https://www.wired.com/feed/rss
@@ -22,6 +23,34 @@ collectors:
         - url: https://feeds.arstechnica.com/arstechnica/index
           name: ArsTechnica
 
+        # ── AI 专题 Newsletter（每天汇总 X+社区精华）────
+        - url: https://news.smol.ai/rss.xml
+          name: AI News (smol.ai)
+        - url: https://www.bensbites.com/feed
+          name: Ben's Bites
+        - url: https://importai.substack.com/feed
+          name: Import AI (Jack Clark)
+        - url: https://simonwillison.net/atom/everything/
+          name: Simon Willison
+
+        # ── Medium AI 精选 ────────────────────────────
+        - url: https://medium.com/feed/tag/llm
+          name: Medium LLM
+        - url: https://medium.com/feed/tag/ai-agents
+          name: Medium AI Agents
+        - url: https://medium.com/feed/tag/large-language-models
+          name: Medium Large Language Models
+
+        # ── 开发者社区 ────────────────────────────────
+        - url: https://dev.to/feed/tag/aiagents
+          name: DEV.to AI Agents
+        - url: https://dev.to/feed/tag/llm
+          name: DEV.to LLM
+
+        # ── HN 过滤精华（10分以上 LLM/AI Agent 相关）─
+        - url: https://hnrss.org/newest?q=LLM+OR+%22AI+agent%22&points=10
+          name: HN AI精华
+
 filter:
   threshold: 7.0
-  max_items: 15
+  max_items: 20
