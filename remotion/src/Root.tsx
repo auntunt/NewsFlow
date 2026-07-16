@@ -65,7 +65,7 @@ export const RemotionRoot: React.FC = () => {
       id="NewsFlowVideo"
       component={VideoComposition}
       durationInFrames={1800}
-      fps={30}
+      fps={24}
       width={1080}
       height={1920}
       defaultProps={defaultProps}

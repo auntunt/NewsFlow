@@ -113,17 +113,12 @@ def run(run_id: str | None = None, dry_run: bool = False) -> dict:
                 label = k.replace("_image", "")
                 print(f"  {label}: {v or '生成失败'}")
     else:
-        # Step 3: 发布
+        # Step 3: 发布公众号草稿
         from newsflow.publishers.wechat_publisher import publish_wechat_draft
-        from newsflow.publishers.xhs_publisher import publish_xhs
 
         print("\n[Phase3] 发布公众号草稿...")
         wx_result = publish_wechat_draft(wechat, images=images)
-        print(f"         公众号：{'✓ 草稿已创建' if wx_result.get('ok') else '✗ ' + wx_result.get('error','')}")
-
-        print("[Phase3] 发布小红书...")
-        xhs_result = publish_xhs(xhs)
-        print(f"         小红书：{'✓ 已发布' if xhs_result.get('ok') else '✗ ' + xhs_result.get('error','')}")
+        print(f"         公众号：{'✓ 草稿已创建 draft_id=' + str(wx_result.get('draft_id','')) if wx_result.get('ok') else '✗ ' + wx_result.get('error','')}")
 
     return result
 

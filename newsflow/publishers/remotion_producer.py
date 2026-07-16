@@ -105,27 +105,28 @@ def _render_with_remotion(
     with open(props_file, "w", encoding="utf-8") as f:
         json.dump(props, f, ensure_ascii=False)
 
-    fps = 30
-    frames = int(duration_sec * fps) + 30  # 多留1秒
+    fps = 24                              # 降到 24fps，帧数减少 20%
+    frames = int(duration_sec * fps) + 24 # 多留1秒
 
     cmd = [
         "npx", "remotion", "render",
-        "./src/Root.tsx",          # 入口文件（必须指定）
-        "NewsFlowVideo",           # composition id
+        "./src/Root.tsx",
+        "NewsFlowVideo",
         str(Path(output_path).absolute()),
         "--props", str(props_file.absolute()),
         "--duration-in-frames", str(frames),
         "--concurrency", str(concurrency),
+        "--jpeg-quality", "80",           # 降低每帧质量换速度
         "--log", "error",
     ]
 
-    print(f"[Remotion] 开始渲染 ({frames} 帧，{duration_sec:.1f}s)...")
+    print(f"[Remotion] 开始渲染 ({frames} 帧 @ {fps}fps，{duration_sec:.1f}s)，并发={concurrency}...")
     result = subprocess.run(
         cmd,
         cwd=str(REMOTION_DIR),
         capture_output=True,
         text=True,
-        timeout=600,
+        timeout=1200,                     # 20 分钟
     )
 
     if result.returncode != 0:
