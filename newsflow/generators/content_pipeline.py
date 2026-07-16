@@ -118,7 +118,7 @@ def run(run_id: str | None = None, dry_run: bool = False) -> dict:
         from newsflow.publishers.xhs_publisher import publish_xhs
 
         print("\n[Phase3] 发布公众号草稿...")
-        wx_result = publish_wechat_draft(wechat)
+        wx_result = publish_wechat_draft(wechat, images=images)
         print(f"         公众号：{'✓ 草稿已创建' if wx_result.get('ok') else '✗ ' + wx_result.get('error','')}")
 
         print("[Phase3] 发布小红书...")
