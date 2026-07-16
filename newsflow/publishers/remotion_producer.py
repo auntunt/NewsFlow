@@ -109,9 +109,11 @@ def _render_with_remotion(
     frames = int(duration_sec * fps) + 30  # 多留1秒
 
     cmd = [
-        "npx", "remotion", "render", "NewsFlowVideo",
+        "npx", "remotion", "render",
+        "./src/Root.tsx",          # 入口文件（必须指定）
+        "NewsFlowVideo",           # composition id
+        str(Path(output_path).absolute()),
         "--props", str(props_file.absolute()),
-        "--output", str(Path(output_path).absolute()),
         "--duration-in-frames", str(frames),
         "--concurrency", str(concurrency),
         "--log", "error",
@@ -154,7 +156,7 @@ def produce_remotion_video(
     if not script_text:
         return {"ok": False, "error": "视频脚本为空"}
 
-    audio_path = str(VIDEOS_DIR / f"{run_id}_remotion_audio.mp3")
+    audio_path = str(VIDEOS_DIR / f"{run_id}_audio.mp3")
     video_path = str(VIDEOS_DIR / f"{run_id}_remotion.mp4")
 
     # Step 1: TTS + 词级时间戳
@@ -166,11 +168,10 @@ def produce_remotion_video(
         return {"ok": False, "error": "TTS 生成失败或无词级时间戳"}
 
     # 音频总时长（ms）
-    total_ms   = words[-1]["end_ms"] + 1000   # 结尾多1秒
+    total_ms   = words[-1]["end_ms"] + 1000
     total_sec  = total_ms / 1000
 
     # Step 2: 词 → 字幕段
-    # 封面5秒，字幕从5秒后开始，所有 ms 加 5000 偏移
     COVER_MS = 5000
     shifted_words = [
         {**w, "start_ms": w["start_ms"] + COVER_MS,
@@ -180,12 +181,17 @@ def produce_remotion_video(
     segments = _words_to_segments(shifted_words, chars_per_segment=10)
     total_sec_with_cover = total_sec + COVER_MS / 1000
 
-    # Step 3: 构建 Remotion props
-    # 音频路径用相对于 remotion 目录的形式
-    audio_rel = str(Path(audio_path).absolute())
+    # Step 3: 把音频复制到 remotion/public/ 目录，Remotion 通过 HTTP 访问
+    public_dir = REMOTION_DIR / "public"
+    public_dir.mkdir(exist_ok=True)
+    audio_filename = f"{run_id}_audio.mp3"
+    import shutil
+    shutil.copy2(audio_path, public_dir / audio_filename)
+    # Remotion 里音频用 staticFile() 引用 public/ 目录的文件
+    audio_src = f"/{audio_filename}"   # 相对于 public/
 
     props = {
-        "audioSrc":        audio_rel,
+        "audioSrc":        audio_src,
         "coverText":       cover_text,
         "segments":        segments,
         "coverDurationSec": 5,

@@ -12,15 +12,16 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@remotion/captions": "^4.0.490",
-    "@remotion/cli": "^4.0.490",
-    "@remotion/player": "^4.0.490",
-    "@remotion/renderer": "^4.0.490",
+    "@remotion/captions": "4.0.490",
+    "@remotion/cli": "4.0.490",
+    "@remotion/install-whisper-cpp": "^4.0.490",
+    "@remotion/player": "4.0.490",
+    "@remotion/renderer": "4.0.490",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "remotion": "^4.0.490",
+    "remotion": "4.0.490",
     "remotion-captioneer": "^0.9.0",
-    "typescript": "^7.0.2"
+    "typescript": "5.8.3"
   },
   "remotion": {
     "entryPoint": "./src/Root.tsx"

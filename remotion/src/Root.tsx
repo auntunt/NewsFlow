@@ -1,6 +1,6 @@
 // src/Root.tsx
 import React from "react";
-import { Composition } from "remotion";
+import { Composition, registerRoot } from "remotion";
 import { VideoComposition, VideoProps } from "./VideoComposition";
 
 // 默认 props（用于 Remotion Studio 预览）
@@ -64,7 +64,7 @@ export const RemotionRoot: React.FC = () => {
     <Composition
       id="NewsFlowVideo"
       component={VideoComposition}
-      durationInFrames={1800}   // 60秒 × 30fps，实际渲染时由 Python 传入
+      durationInFrames={1800}
       fps={30}
       width={1080}
       height={1920}
@@ -72,3 +72,5 @@ export const RemotionRoot: React.FC = () => {
     />
   );
 };
+
+registerRoot(RemotionRoot);

@@ -1,7 +1,7 @@
 // src/VideoComposition.tsx
 // 主合成：波浪背景 + 封面字 + 字幕 + 音频
 import React from "react";
-import { AbsoluteFill, Audio, Sequence, useVideoConfig } from "remotion";
+import { AbsoluteFill, Audio, Sequence, useVideoConfig, staticFile } from "remotion";
 import { WaveBackground } from "./WaveBackground";
 import { CoverTitle } from "./CoverTitle";
 import { CaptionOverlay, CaptionSegment } from "./CaptionOverlay";
@@ -31,7 +31,7 @@ export const VideoComposition: React.FC<VideoProps> = ({
 
       {/* 2. 音频 */}
       {audioSrc && (
-        <Audio src={audioSrc} startFrom={0} />
+        <Audio src={staticFile(audioSrc)} startFrom={0} />
       )}
 
       {/* 3. 封面字（开头 coverDurationSec 秒） */}
