@@ -22,6 +22,7 @@ from newsflow.generators.topic_picker import pick_topic
 from newsflow.generators.wechat_writer import generate_wechat
 from newsflow.generators.xhs_writer import generate_xhs
 from newsflow.generators.video_script import generate_video_script
+from newsflow.generators.image_generator import generate_images
 from newsflow.storage.local import LocalStorage
 
 
@@ -69,6 +70,9 @@ def run(run_id: str | None = None, dry_run: bool = False) -> dict:
     print(f"         来源：{topic['source']} | 评分：{topic.get('score', '?')}")
     print(f"         链接：{topic['url']}")
 
+    print("\n[Phase3] 生成配图...")
+    images = generate_images(topic, run_id)
+
     # Step 2: 并行生成三份内容
     print("\n[Phase3] 生成公众号稿...")
     wechat = generate_wechat(topic)
@@ -82,6 +86,7 @@ def run(run_id: str | None = None, dry_run: bool = False) -> dict:
     result = {
         "run_id": run_id,
         "topic": topic,
+        "images": images,
         "wechat": wechat,
         "xhs": xhs,
         "video_script": video,
@@ -102,6 +107,11 @@ def run(run_id: str | None = None, dry_run: bool = False) -> dict:
         print(xhs["title"])
         print("\n=== 视频脚本（前200字）===")
         print(video["script"][:200] + "...")
+        print("\n=== 配图 ===")
+        for k, v in images.items():
+            if k.endswith("_image"):
+                label = k.replace("_image", "")
+                print(f"  {label}: {v or '生成失败'}")
     else:
         # Step 3: 发布
         from newsflow.publishers.wechat_publisher import publish_wechat_draft
