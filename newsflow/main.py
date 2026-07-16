@@ -122,6 +122,17 @@ def cmd_mcp() -> None:
     mcp.run()
 
 
+@app.command("publish")
+def cmd_publish(
+    run_id: str = typer.Option(None, "--run-id", help="指定 run id，默认取最新"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="只生成不发布，打印预览"),
+    data_dir: str = typer.Option("./data", "--data-dir"),
+) -> None:
+    """Phase 3：从最新 run 选题，生成公众号+小红书+视频脚本，并发布。"""
+    from newsflow.generators.content_pipeline import run as phase3_run
+    phase3_run(run_id=run_id, dry_run=dry_run)
+
+
 def _resolve_workflow(name: str) -> Path:
     p = Path(name)
     if p.exists():
