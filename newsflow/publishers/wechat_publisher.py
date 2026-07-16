@@ -66,8 +66,12 @@ def publish_wechat_draft(wechat: dict, images: dict | None = None) -> dict:
         # ── 1. 上传封面图 ─────────────────────────────────────────────────
         cdn_url = fileid = ""
         cover_path = None
+        article_cdns: list[str] = []   # 正文内嵌图的 cdn_url 列表
+
         if images:
-            for key in ("wechat_image", "xhs_image"):
+            for key in ("wechat_image", "article_images", "xhs_image"):
+                if key == "article_images":
+                    continue
                 p = images.get(key)
                 if p and Path(str(p)).exists():
                     cover_path = str(p)
@@ -84,8 +88,26 @@ def publish_wechat_draft(wechat: dict, images: dict | None = None) -> dict:
         else:
             print("[公众号] 无封面图")
 
-        # ── 2. 正文 HTML（顶部内嵌配图）──────────────────────────────────
-        html_content = _to_html(wechat["content"], inline_img=cdn_url)
+        # ── 上传正文内嵌图（article_images[1:]，跳过封面）────────────────
+        if images:
+            article_paths = images.get("article_images") or []
+            for i, apath in enumerate(article_paths[1:], 1):   # 跳过[0]（已做封面）
+                if not apath or not Path(str(apath)).exists():
+                    continue
+                print(f"[公众号] 上传内嵌图 {i}: {apath}")
+                ac, _, aerr = upload_image(token, cookie_str, str(apath))
+                if aerr:
+                    print(f"[公众号] 内嵌图 {i} 上传失败: {aerr}")
+                else:
+                    article_cdns.append(ac)
+                    print(f"[公众号] ✓ 内嵌图 {i} 上传成功")
+
+        # ── 2. 正文 HTML（内嵌多张配图）─────────────────────────────────
+        html_content = _to_html(
+            wechat["content"],
+            cover_img=cdn_url,
+            inline_imgs=article_cdns,   # 均匀插入正文段落之间
+        )
 
         # ── 3. 创建草稿 ───────────────────────────────────────────────────
         digest   = (wechat.get("intro") or wechat.get("summary") or "")[:120]
@@ -112,27 +134,54 @@ def publish_wechat_draft(wechat: dict, images: dict | None = None) -> dict:
         return {"ok": False, "error": str(e)}
 
 
-def _to_html(text: str, inline_img: str = "") -> str:
-    """纯文本 → 公众号 HTML，可选顶部内嵌配图"""
+def _to_html(text: str, cover_img: str = "",
+             inline_img: str = "",      # 兼容旧调用
+             inline_imgs: list[str] | None = None) -> str:
+    """
+    纯文本 → 公众号 HTML，支持多张内嵌配图。
+    cover_img  : 顶部封面图
+    inline_imgs: 均匀插入正文段落之间的图片列表
+    """
     import html as html_lib
-    parts = []
+    paragraphs = [p.strip() for p in text.strip().split("\n\n") if p.strip()]
+    imgs = inline_imgs or ([inline_img] if inline_img else [])
+    parts: list[str] = []
 
-    # 正文顶部配图
-    if inline_img:
+    # 顶部封面
+    if cover_img:
         parts.append(
             f'<p style="text-align:center;margin:0 0 1.5em 0">'
-            f'<img src="{inline_img}" style="max-width:100%;border-radius:8px"/></p>'
+            f'<img src="{cover_img}" style="max-width:100%;border-radius:8px"/></p>'
         )
 
-    for para in text.strip().split("\n\n"):
-        para = para.strip()
-        if not para:
-            continue
+    # 计算图片插入位置（均匀分布在段落之间）
+    n_imgs = len(imgs)
+    n_paras = len(paragraphs)
+    # 例如 3 张图 10 段：在第 3、6、9 段后插图
+    insert_after: set[int] = set()
+    if n_imgs and n_paras:
+        step = max(n_paras // (n_imgs + 1), 1)
+        for k in range(1, n_imgs + 1):
+            pos = min(k * step - 1, n_paras - 1)
+            insert_after.add(pos)
+
+    img_iter = iter(imgs)
+    for i, para in enumerate(paragraphs):
         escaped = html_lib.escape(para).replace("\n", "<br/>")
         parts.append(
             f'<p style="margin:0 0 1em 0;line-height:1.9;'
             f'font-size:16px;color:#333">{escaped}</p>'
         )
+        if i in insert_after:
+            try:
+                cdn = next(img_iter)
+                if cdn:
+                    parts.append(
+                        f'<p style="text-align:center;margin:1.5em 0">'
+                        f'<img src="{cdn}" style="max-width:100%;border-radius:8px"/></p>'
+                    )
+            except StopIteration:
+                pass
 
     return "\n".join(parts)
 
