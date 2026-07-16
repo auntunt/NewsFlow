@@ -43,10 +43,16 @@ def publish_wechat_draft(wechat: dict) -> dict:
     except ImportError as e:
         return {"ok": False, "error": f"无法导入 WX--autoarticle 模块: {e}\n请检查 WX_AUTOARTICLE_PATH 配置"}
 
-    # 读 cookie
-    cookie_file = Path(_WX_PATH) / "api" / "storage" / "cookies" / f"{_ACCOUNT}.json"
+    # 读 cookie —— 优先从 NewsFlow 本地，fallback 到 WX--autoarticle
+    local_cookie = Path("data/cookies") / f"{_ACCOUNT}.json"
+    wx_cookie    = Path(_WX_PATH) / "api" / "storage" / "cookies" / f"{_ACCOUNT}.json"
+    cookie_file  = local_cookie if local_cookie.exists() else wx_cookie
+
     if not cookie_file.exists():
-        return {"ok": False, "error": f"Cookie 文件不存在: {cookie_file}\n请先登录公众号获取 Cookie"}
+        return {
+            "ok": False,
+            "error": f"Cookie 不存在，已查找：\n  {local_cookie}\n  {wx_cookie}"
+        }
 
     import json
     with open(cookie_file, encoding="utf-8") as f:
